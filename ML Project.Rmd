@@ -1,0 +1,136 @@
+---
+title: "Machine Learning Project"
+author: "Beatriz Del Fiol"
+date: "14 de outubro de 2019"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+#Getting data set
+```{r dataset}
+library(data.table)
+
+TrainDataURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+TestDataURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+# Download and clean the datasets
+TrainingData <- read.csv(url(TrainDataURL), na.strings=c("NA","#DIV/0!",""))
+TestingData <- read.csv(url(TestDataURL), na.strings=c("NA","#DIV/0!",""))
+
+# Check for the datasets dimemsions
+dim(TrainingData)
+dim(TestingData)
+
+```
+#Preparing dataset
+```{r data}
+# Delete columns with missing values
+TrainingData <-TrainingData[,colSums(is.na(TrainingData)) == 0]
+TestingData <-TestingData[,colSums(is.na(TestingData)) == 0]
+
+# Delete unused columns
+TrainingData <-TrainingData[,-c(1:7)]
+TestingData <-TestingData[,-c(1:7)]
+
+# Check for the datasets dimemsions
+dim(TrainingData)
+dim(TestingData)
+
+```
+#Preparing to run models
+
+Load necessary pachages knitr, caret, rpart.plot, rattle, randomForest, corrplot, gbm 
+```{r preparing}
+library(knitr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(corrplot)
+library(gbm)
+library(e1071)
+set.seed(321)
+```
+#Dividing dataset
+
+70% training and 30% test
+
+```{r dividing data set}
+PartData <- createDataPartition(TrainingData$classe, p=0.7, list=FALSE)
+TrainingSet <- TrainingData[PartData, ]
+dim(TrainingSet)
+#names(TrainingSet)
+
+TestingSet <- TrainingData[-PartData, ]
+dim(TestingSet)
+#names(TestingSet)
+```
+#Correlation matriz
+TraingSet and TestingSet
+
+```{r correlation}
+
+
+
+
+```
+#Prediction model Building
+
+It will predicting with tree, Bagging, Random Forests, Booting and verify the accuracy.
+
+##a. Random Forests
+
+
+```{r random forest}
+library(randomForest)
+set.seed(321)
+RFmodel <- randomForest(classe ~., data=TrainingSet, method="class")
+
+# Predicting
+prediction1 <- predict(RFmodel, TestingSet, Type="class")
+
+#Testing
+confusionMatrix(prediction1, TestingSet$classe)
+
+```
+##b. Decision Tree
+
+```{r decision tree}
+
+set.seed(321)
+fitDT <- rpart(classe ~ ., data = TrainingSet, method="class")
+predictDT <- predict(fitDT, newdata = TestingSet, type="class")
+conf_matrixDT <- confusionMatrix(predictDT, TestingSet$classe)
+conf_matrixDT
+
+```
+##c. Generalized Boosted Model (GBM)
+
+```{r GBM}
+library(caret)
+set.seed(321)
+fitControl <- trainControl(method="repeatedcv", number=5, repeats=1)
+GBMmodel <- train(classe ~., data=TrainingSet, method="gbm", trControl=fitControl, verbose=FALSE)
+
+# Predicting
+prediction2 <- predict(GBMmodel, TestingSet)
+
+# Testing
+confusionMatrix(prediction2, TestingSet$classe)
+```
+#Test
+Since Random Forest was chosen due to the best accuray, we will run the prediction test with the Test data file.
+```{r test}
+predictTest <- predict(RFmodel, TestingData)
+predictTest
+
+```
